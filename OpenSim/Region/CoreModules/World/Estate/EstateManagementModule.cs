@@ -1407,6 +1407,8 @@ namespace OpenSim.Region.CoreModules.World.Estate
                 return;
 
             Dictionary<uint, float> sceneData = null;
+            Dictionary<uint, int> bytesUsed = null;
+            Dictionary<UUID, int> urlsInUse = null;
 
             if (reportType == 1)
             {
@@ -1417,7 +1419,16 @@ namespace OpenSim.Region.CoreModules.World.Estate
                 IScriptModule scriptModule = Scene.RequestModuleInterface<IScriptModule>();
 
                 if (scriptModule != null)
+                {
                     sceneData = scriptModule.GetObjectScriptsExecutionTimes();
+                    bytesUsed = scriptModule.GetObjectScriptsBytesUsed();
+                }
+
+                IUrlModule urlModule = Scene.RequestModuleInterface<IUrlModule>();
+                if(urlModule != null)
+                {
+                    urlsInUse = urlModule.GetUrlCountForHosts();
+                }
             }
 
             List<LandStatReportItem> SceneReport = new List<LandStatReportItem>();
@@ -1437,13 +1448,24 @@ namespace OpenSim.Region.CoreModules.World.Estate
                     if (entry.Part == null)
                         continue;
 
+                    int bytes_used = 0;
+                    if (bytesUsed.ContainsKey(entry.Part.LocalId))
+                        bytes_used = bytesUsed[entry.Part.LocalId];
+
+                    int urls_used = 0;
+                    if (urlsInUse.ContainsKey(entry.Part.UUID))
+                        urls_used = urlsInUse[entry.Part.UUID];
+
                     // Don't show scripts that haven't executed or where execution time is below one microsecond in
                     // order to produce a more readable report.
-                    if (entry.Measurement < 0.001)
+                    if (entry.Measurement < 0.001 && bytes_used < 1024 && urls_used == 0)
                         continue;
 
                     items++;
                     SceneObjectGroup so = entry.Part.ParentGroup;
+
+
+                    ILandObject land = Scene.LandChannel.GetLandObject(entry.Part.AbsolutePosition);
 
                     LandStatReportItem lsri = new LandStatReportItem()
                     {
@@ -1454,7 +1476,12 @@ namespace OpenSim.Region.CoreModules.World.Estate
                         TaskID = so.UUID,
                         TaskLocalID = so.LocalId,
                         TaskName = entry.Part.Name,
-                        OwnerName = UserManager.GetUserName(so.OwnerID)
+                        OwnerName = UserManager.GetUserName(so.OwnerID),
+                        OwnerID = so.OwnerID,
+                        Bytes = bytes_used,
+                        Urls = urls_used,
+                        Time = Utils.DateTimeToUnixTime(entry.Part.Rezzed),
+                        Parcel = land != null ? land.LandData.Name : "unknown"
                     };
 
                     if (filter.Length != 0)
