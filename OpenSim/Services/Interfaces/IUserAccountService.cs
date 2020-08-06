@@ -94,6 +94,8 @@ namespace OpenSim.Services.Interfaces
         public string UserCountry;
         public Boolean LocalToGrid = true;
         public int TOSDate;
+		public string DisplayName = string.Empty;
+		public int NameChanged;
 
         public Dictionary<string, object> ServiceURLs;
 
@@ -129,6 +131,11 @@ namespace OpenSim.Services.Interfaces
 			
             if (kvp.ContainsKey("TOSDate") && kvp["TOSDate"] != null)
                 TOSDate = Convert.ToInt32(kvp["TOSDate"].ToString());
+			
+            if (kvp.ContainsKey("DisplayName") && kvp["DisplayName"] != null && !string.IsNullOrWhiteSpace((string)kvp["DisplayName"]))
+                DisplayName = kvp["DisplayName"].ToString();
+            if (kvp.ContainsKey("NameChanged") && kvp["NameChanged"] != null)
+                NameChanged = Convert.ToInt32(kvp["NameChanged"].ToString());
 
             if (kvp.ContainsKey("Created"))
                 Created = Convert.ToInt32(kvp["Created"].ToString());
@@ -165,6 +172,11 @@ namespace OpenSim.Services.Interfaces
             result["UserCountry"] = UserCountry;
             result["LocalToGrid"] = LocalToGrid.ToString();
             result["TOSDate"] = TOSDate;
+			
+            if (!string.IsNullOrWhiteSpace(DisplayName))
+                result["DisplayName"] = DisplayName;
+
+            result["NameChanged"] = NameChanged;
 
             string str = string.Empty;
             foreach (KeyValuePair<string, object> kvp in ServiceURLs)
@@ -200,6 +212,9 @@ namespace OpenSim.Services.Interfaces
         /// <param name="data"></param>
         /// <returns></returns>
         bool StoreUserAccount(UserAccount data);
+		
+		// only applies on existing accounts
+        bool SetDisplayName(UUID userID, string displayName);
 
         void InvalidateCache(UUID userID);
     }
