@@ -1002,5 +1002,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public const int SIT_INVALID_LINK = -5;
         public const int SIT_NO_ACCESS = -6;
         public const int SIT_INVALID_OBJECT = -7;
+
+        // llTargetedEmail
+        public const int TARGETED_EMAIL_OBJECT_OWNER = 2;
     }
 }
