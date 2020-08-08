@@ -694,6 +694,13 @@
     Cap_AvatarPickerSearch = "localhost"
     Cap_GetDisplayNames = "localhost"
     Cap_SetDisplayName = "localhost"
+	
+    ; Enable this cap if you would like your region to supply a syntax XML for scripts
+    ; You will need to configure the [LSLSyntax] section for this feature to work.
+    ; Cap_LSLSyntax = "localhost"
+
+    ; Alternatively, you could have an externally hosted syntax xml and reference the SyntaxID here
+    ; Cap_LSLSyntax = "http://lslsyntax.main.examplegrid.com/${LSLSyntax|SyntaxID}"
 
 	;# {ExternalViewerAssetsURL} {} {Redirect URL for asset calls to assets NOT found in the region's cache.} {}
 	; ExternalViewerAssetURL = "http://viewerasset.main.examplegrid.com"
@@ -1252,6 +1259,20 @@
 [DisplayNames]
     ;# {Enabled} {} {Use Display Names on this region} {true false} false
     ; Enabled = false
+
+[LSLSyntax]
+    ; To use LSLSyntax, you will need to generate a UUID for your SyntaxID and set it below
+    ; Then go to ./LSLSyntax and rename the appropriate syntax XML to be your generated UUID with .xml as the file extension.
+    ; e.g. Renaming CoreScriptSyntax.xml to 16dc04d6-1bf6-4a0c-abc4-47aade0a02db.xml
+	; You can also relocate the XML to a centralised folder (SyntaxDir) if you would like your regions to share XMLs
+
+    ; A useful tool for generating UUIDs is https://www.uuidgenerator.net/
+    
+    ;# {SyntaxID} {} {The UUID for your LSL Syntax} {}
+    ; SyntaxID = 00000000-0000-0000-0000-000000000000
+    
+    ;# {SyntaxDir} {} {The directory for your LSL Syntax XMLs} {}
+    ; SyntaxDir = "./LSLSyntax/"
 
 [Architecture]
     ;# {Include-Architecture} {} {Choose one of the following architectures} {config-include/Standalone.ini config-include/StandaloneHypergrid.ini config-include/Grid.ini config-include/GridHypergrid.ini} config-include/Standalone.ini
