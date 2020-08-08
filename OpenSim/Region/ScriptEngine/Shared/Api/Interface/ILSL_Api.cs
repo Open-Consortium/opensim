@@ -314,6 +314,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
            LSL_Key llRequestSecureURL();
            LSL_Key llRequestSimulatorData(string simulator, int data);
            LSL_Key llRequestURL();
+           LSL_Key llRequestUserKey(LSL_String name);
               void llResetLandBanList();
               void llResetLandPassList();
               void llResetOtherScript(string name);
@@ -426,6 +427,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
        LSL_Integer llTarget(LSL_Vector position, double range);
               void llTargetOmega(LSL_Vector axis, double spinrate, double gain);
               void llTargetRemove(int number);
+              void llTargetedEmail(LSL_Integer target, string subject, string message);
               void llTeleportAgentHome(string agent);
               void llTeleportAgent(string agent, string simname, LSL_Vector pos, LSL_Vector lookAt);
               void llTeleportAgentGlobalCoords(string agent, LSL_Vector global, LSL_Vector pos, LSL_Vector lookAt);

@@ -4167,6 +4167,45 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         }
 
+        public void llTargetedEmail(LSL_Integer target, string subject, string message)
+        {
+            m_host.AddScriptLPS(1);
+            IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
+            if (emailModule == null)
+            {
+                Error("llTargetedEmail", "Email module not configured");
+                return;
+            }
+
+            string address;
+
+            if(target == ScriptBaseClass.TARGETED_EMAIL_OBJECT_OWNER)
+            {
+                UserAccount account =
+                        World.UserAccountService.GetUserAccount(
+                            World.RegionInfo.ScopeID,
+                            m_host.OwnerID);
+
+                if (account == null)
+                {
+                    Error("llEmail", "Can't find user account for '" + m_host.OwnerID.ToString() + "'");
+                    return;
+                }
+
+                if (String.IsNullOrEmpty(account.Email))
+                {
+                    Error("llEmail", "User account has not registered an email address.");
+                    return;
+                }
+
+                address = account.Email;
+            }
+            else return;
+
+            emailModule.SendEmail(m_host.UUID, address, subject, message);
+            ScriptSleep(m_sleepMsOnEmail);
+        }
+
         public LSL_Key llGetKey()
         {
             m_host.AddScriptLPS(1);
@@ -6989,6 +7028,31 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             }
 
             return UUID.Zero.ToString();
+        }
+
+        public LSL_Key llRequestUserKey(LSL_String name)
+        {
+            UUID identifier = UUID.Random();
+
+            UUID request_id = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
+
+            string[] split = name.m_string.Split('.');
+
+            if(split.Length <= 2)
+            {
+                string first = split[0];
+                string last = split.Length == 2 ? split[1] : "Resident";
+
+                UUID avatar = World.UserManagementModule.GetUserIdByName(first, last);
+
+                AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), avatar.ToString());
+            }
+            else
+            {
+                AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), ScriptBaseClass.NULL_KEY);
+            }
+
+            return request_id.ToString();
         }
 
         public void llSetTextureAnim(int mode, int face, int sizex, int sizey, double start, double length, double rate)

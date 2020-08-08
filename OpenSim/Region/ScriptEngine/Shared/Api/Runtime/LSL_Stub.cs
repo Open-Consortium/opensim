@@ -1365,6 +1365,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
             return m_LSL_Functions.llRequestURL();
         }
 
+        public LSL_Key llRequestUserKey(LSL_String name)
+        {
+            return m_LSL_Functions.llRequestUserKey(name);
+        }
+
         public void llResetLandBanList()
         {
             m_LSL_Functions.llResetLandBanList();
@@ -1919,6 +1924,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public void llTargetRemove(int number)
         {
             m_LSL_Functions.llTargetRemove(number);
+        }
+
+        public void llTargetedEmail(LSL_Integer target, string subject, string message)
+        {
+            m_LSL_Functions.llTargetedEmail(target, subject, message);
         }
 
         public void llTeleportAgent(string agent, string simname, LSL_Vector pos, LSL_Vector lookAt)
