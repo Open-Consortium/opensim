@@ -130,7 +130,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         protected IMaterialsModule m_materialsModule = null;
         protected IEnvironmentModule m_envModule = null;
-
+        protected IEmailModule m_emailModule = null;
         protected Dictionary<UUID, UserInfoCacheEntry> m_userInfoCache = new Dictionary<UUID, UserInfoCacheEntry>();
         protected int EMAIL_PAUSE_TIME = 20;  // documented delay value for smtp.
         protected int m_sleepMsOnSetTexture = 200;
@@ -391,11 +391,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             LoadConfig();
 
             m_TransferModule =
-                    m_ScriptEngine.World.RequestModuleInterface<IMessageTransferModule>();
+            m_ScriptEngine.World.RequestModuleInterface<IMessageTransferModule>();
             m_UrlModule = m_ScriptEngine.World.RequestModuleInterface<IUrlModule>();
             m_SoundModule = m_ScriptEngine.World.RequestModuleInterface<ISoundModule>();
             m_materialsModule = m_ScriptEngine.World.RequestModuleInterface<IMaterialsModule>();
 
+            m_emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
             m_envModule = m_ScriptEngine.World.RequestModuleInterface< IEnvironmentModule>();
 
             AsyncCommands = new AsyncCommandManager(m_ScriptEngine);
@@ -4091,7 +4092,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public void llEmail(string address, string subject, string message)
         {
             m_host.AddScriptLPS(1);
-            IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
+            IEmailModule m_emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
 			
             if (m_disablellEmail == true)
 			{
@@ -4099,7 +4100,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 				return;
 			}	
 			
-			if (emailModule == null)
+			if (m_emailModule == null)
             {
                 Error("llEmail", "Email module not configured");
                 return;
@@ -4109,10 +4110,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             //The restriction only applies if the destination address is not local.
             if (m_restrictEmail == true && address.Contains(m_internalObjectHost) == false)
             {
-                UserAccount account =
-                        World.UserAccountService.GetUserAccount(
-                            World.RegionInfo.ScopeID,
-                            m_host.OwnerID);
+                UserAccount account = World.UserAccountService.GetUserAccount(World.RegionInfo.ScopeID,m_host.OwnerID); 
 
                 if (account == null)
                 {
@@ -4129,7 +4127,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 address = account.Email;
             }
 
-            emailModule.SendEmail(m_host.UUID, address, subject, message);
+            m_emailModule.SendEmail(m_host.UUID, address, subject, message);
             ScriptSleep(m_sleepMsOnEmail);
         }
 
@@ -4142,15 +4140,15 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 			}	
 			
             m_host.AddScriptLPS(1);
-            IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
-            if (emailModule == null)
+            IEmailModule m_emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
+            if (m_emailModule == null)
             {
                 Error("llGetNextEmail", "Email module not configured");
                 return;
             }
             Email email;
 
-            email = emailModule.GetNextEmail(m_host.UUID, address, subject);
+            email = m_emailModule.GetNextEmail(m_host.UUID, address, subject);
 
             if (email == null)
                 return;
@@ -4167,44 +4165,67 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         }
 
-        public void llTargetedEmail(LSL_Integer target, string subject, string message)
+ public void llTargetedEmail(LSL_Integer target, LSL_String subject, LSL_String message)
         {
             m_host.AddScriptLPS(1);
-            IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
-            if (emailModule == null)
+
+            SceneObjectGroup parent = m_host.ParentGroup;
+            if (parent == null || parent.IsDeleted)
+                return;
+
+            if (m_emailModule == null)
             {
                 Error("llTargetedEmail", "Email module not configured");
                 return;
             }
 
-            string address;
-
-            if(target == ScriptBaseClass.TARGETED_EMAIL_OBJECT_OWNER)
+            if (subject.Length + message.Length > 4096)
             {
-                UserAccount account =
-                        World.UserAccountService.GetUserAccount(
-                            World.RegionInfo.ScopeID,
-                            m_host.OwnerID);
-
-                if (account == null)
-                {
-                    Error("llEmail", "Can't find user account for '" + m_host.OwnerID.ToString() + "'");
-                    return;
-                }
-
-                if (String.IsNullOrEmpty(account.Email))
-                {
-                    Error("llEmail", "User account has not registered an email address.");
-                    return;
-                }
-
-                address = account.Email;
+                Error("llTargetedEmail", "Message is too large");
+                return;
             }
-            else return;
 
-            emailModule.SendEmail(m_host.UUID, address, subject, message);
+            UserAccount account = null;
+            if (target == ScriptBaseClass.TARGETED_EMAIL_OBJECT_OWNER)
+            {
+                if(parent.OwnerID == parent.GroupID)
+                    return;
+                account = World.UserAccountService.GetUserAccount(
+                            World.RegionInfo.ScopeID,
+                            parent.OwnerID);
+            }
+            else if (target == ScriptBaseClass.TARGETED_EMAIL_ROOT_CREATOR)
+            {
+                // non standard avoid creator spam
+                if(m_item.CreatorID == parent.RootPart.CreatorID)
+                {
+                    account = World.UserAccountService.GetUserAccount(
+                            World.RegionInfo.ScopeID,
+                            parent.RootPart.CreatorID);
+                }
+                else
+                    return;
+            }
+            else
+                return;
+
+            if (account == null)
+            {
+                Error("llTargetedEmail", "Can't find user account for '" + m_host.OwnerID.ToString() + "'");
+                return;
+            }
+
+            string address = account.Email;
+            if (String.IsNullOrEmpty(address))
+            {
+                Error("llTargetedEmail", "User account has not registered an email address.");
+                return;
+            }
+
+            m_emailModule.SendEmail(m_host.UUID, address, subject, message);
             ScriptSleep(m_sleepMsOnEmail);
         }
+
 
         public LSL_Key llGetKey()
         {
