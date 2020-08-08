@@ -193,6 +193,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         protected int m_sleepMsOnGetNotecardLine = 100;
         protected string m_internalObjectHost = "lsl.opensim.local";
         protected bool m_restrictEmail = false;
+        protected bool m_disablellEmail = true;
         protected ISoundModule m_SoundModule = null;
 
         protected float m_avatarHeightCorrection = 0.2f;
@@ -441,6 +442,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 if (lslConfig != null)
                 {
                     m_restrictEmail = lslConfig.GetBoolean("RestrictEmail", m_restrictEmail);
+					 m_disablellEmail = lslConfig.GetBoolean("DisablellEmail", m_disablellEmail);
                     m_avatarHeightCorrection = lslConfig.GetFloat("AvatarHeightCorrection", m_avatarHeightCorrection);
                     m_useSimpleBoxesInGetBoundingBox = lslConfig.GetBoolean("UseSimpleBoxesInGetBoundingBox", m_useSimpleBoxesInGetBoundingBox);
                     m_addStatsInGetBoundingBox = lslConfig.GetBoolean("AddStatsInGetBoundingBox", m_addStatsInGetBoundingBox);
@@ -4090,7 +4092,14 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         {
             m_host.AddScriptLPS(1);
             IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
-            if (emailModule == null)
+			
+            if (m_disablellEmail == true)
+			{
+				Error("llEmail", "All llEmail functions Disabled");
+				return;
+			}	
+			
+			if (emailModule == null)
             {
                 Error("llEmail", "Email module not configured");
                 return;
@@ -4125,7 +4134,13 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         }
 
         public void llGetNextEmail(string address, string subject)
-        {
+        {			
+            if (m_disablellEmail == true)
+			{
+				Error("llGetNextEmail", "All llEmail functions Disabled");
+				return;
+			}	
+			
             m_host.AddScriptLPS(1);
             IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
             if (emailModule == null)

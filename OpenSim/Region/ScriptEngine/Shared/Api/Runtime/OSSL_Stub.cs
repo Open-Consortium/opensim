@@ -229,6 +229,16 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         {
             m_OSSL_Functions.osRegionNotice(agentID, msg);
         }
+		
+		public void osEmail(string address, string subject, string message)
+		{
+			m_OSSL_Functions.osEmail(address, subject, message);
+		}
+		
+		public void osGetNextEmail(string address, string subject)
+		{
+			m_OSSL_Functions.osGetNextEmail(address, subject);
+		}        		
 
         public bool osConsoleCommand(string Command)
         {

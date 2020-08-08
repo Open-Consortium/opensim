@@ -5462,6 +5462,52 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return ((string)src).IndexOf(value, offset, count, StringComparison.CurrentCulture);
             return ((string)src).IndexOf(value, offset, count, StringComparison.CurrentCultureIgnoreCase);
         }
+		    public void osEmail(string address, string subject, string message)
+        {
+            CheckThreatLevel(ThreatLevel.Severe, "osEmail");
+
+            m_host.AddScriptLPS(1);
+            IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
+            if (emailModule == null)
+            {
+                m_log.DebugFormat("osEmail, Email module not configured");
+                return;
+            }
+
+            
+            emailModule.SendEmail(m_host.UUID, address, subject, message);
+            ScriptSleep(5000);
+        }
+		
+        public void osGetNextEmail(string address, string subject)
+        {
+            CheckThreatLevel(ThreatLevel.VeryHigh, "osGetNextEmail");
+			
+			m_host.AddScriptLPS(1);
+            IEmailModule emailModule = m_ScriptEngine.World.RequestModuleInterface<IEmailModule>();
+            if (emailModule == null)
+            {
+                m_log.DebugFormat("osGetNextEmail, Email module not configured");
+                return;
+            }
+            Email email;
+
+            email = emailModule.GetNextEmail(m_host.UUID, address, subject);
+
+            if (email == null)
+                return;
+
+            m_ScriptEngine.PostObjectEvent(m_host.LocalId,
+                    new EventParams("email",
+                    new Object[] {
+                        new LSL_String(email.time),
+                        new LSL_String(email.sender),
+                        new LSL_String(email.subject),
+                        new LSL_String(email.message),
+                        new LSL_Integer(email.numLeft)},
+                    new DetectParams[0]));
+
+        }		
 
         public LSL_Integer osStringLastIndexOf(LSL_String src, LSL_String value, LSL_Integer ignorecase)
         {

@@ -146,7 +146,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
         void osSetParcelMediaURL(string url);
         void osSetPrimFloatOnWater(int floatYN);
         void osSetParcelSIPAddress(string SIPAddress);
-
+		
+        // Email Functions
+		void osEmail(string address, string subject, string message);
+		void osGetNextEmail(string address, string subject);
+		
         // Avatar Info Commands
         LSL_List osGetAgents();
         string osGetAgentIP(string agent);
