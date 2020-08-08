@@ -35,7 +35,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
     public partial class ScriptBaseClass
     {
         // SCRIPTS CONSTANTS
-        public static readonly LSLInteger OS_APIVERSION = 13;
+        public static readonly LSLInteger OS_APIVERSION = 14;
 
         public static readonly LSLInteger TRUE = 1;
         public static readonly LSLInteger FALSE = 0;
@@ -1004,6 +1004,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public const int SIT_INVALID_OBJECT = -7;
 
         // llTargetedEmail
+        public const int TARGETED_EMAIL_ROOT_CREATOR = 1;
         public const int TARGETED_EMAIL_OBJECT_OWNER = 2;
     }
 }
