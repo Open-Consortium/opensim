@@ -66,6 +66,7 @@ namespace OpenSim.Server.Base
             string address = networkConfig.GetString("address", "0.0.0.0");
             uint port = (uint)networkConfig.GetInt("port", 0);
 
+            IPAddress m_ipaddress;
             if (!IPAddress.TryParse(address, out m_ipaddress))
                 m_ipaddress = IPAddress.Any;
 
@@ -163,7 +164,7 @@ namespace OpenSim.Server.Base
                 if (m_consolePort == 0)
                     mi.Invoke(MainConsole.Instance, new object[] { MainServer.Instance });
                 else
-                    mi.Invoke(MainConsole.Instance, new object[] { MainServer.GetHttpServer(m_consolePort) });
+                    mi.Invoke(MainConsole.Instance, new object[] { MainServer.GetHttpServer(m_consolePort,m_ipaddress) });
             }
         }
     }

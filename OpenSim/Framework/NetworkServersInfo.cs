@@ -26,8 +26,8 @@
  */
 
 using System;
-using Nini.Config;
 using System.Net;
+using Nini.Config;
 
 namespace OpenSim.Framework
 {
