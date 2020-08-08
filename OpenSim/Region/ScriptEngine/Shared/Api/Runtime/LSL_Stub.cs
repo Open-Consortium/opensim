@@ -1365,6 +1365,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
             return m_LSL_Functions.llRequestURL();
         }
 
+        public LSL_Key llRequestUserKey(LSL_String name)
+        {
+            return m_LSL_Functions.llRequestUserKey(name);
+        }
+
         public void llResetLandBanList()
         {
             m_LSL_Functions.llResetLandBanList();

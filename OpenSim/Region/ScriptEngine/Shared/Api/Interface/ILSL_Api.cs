@@ -314,6 +314,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
            LSL_Key llRequestSecureURL();
            LSL_Key llRequestSimulatorData(string simulator, int data);
            LSL_Key llRequestURL();
+           LSL_Key llRequestUserKey(LSL_String name);
               void llResetLandBanList();
               void llResetLandPassList();
               void llResetOtherScript(string name);
