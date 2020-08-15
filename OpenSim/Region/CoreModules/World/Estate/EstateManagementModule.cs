@@ -1674,6 +1674,14 @@ namespace OpenSim.Region.CoreModules.World.Estate
                 }
             }
 
+            // hack: reformat the name so we don't have to do it on every item
+            if((requestFlags & 0x00000002) != 0)
+            {
+                filter = string.Join(" ", filter.Split(new[] { '.' }, 2));
+            }
+
+            filter = filter.ToLower();
+
             List<LandStatReportItem> SceneReport = new List<LandStatReportItem>();
             if (sceneData != null)
             {
@@ -1701,14 +1709,36 @@ namespace OpenSim.Region.CoreModules.World.Estate
 
                     // Don't show scripts that haven't executed or where execution time is below one microsecond in
                     // order to produce a more readable report.
+                    // Unless they are using URLs or using 1024 bytes or more.
                     if (entry.Measurement < 0.001 && bytes_used < 1024 && urls_used == 0)
                         continue;
 
-                    items++;
                     SceneObjectGroup so = entry.Part.ParentGroup;
 
-
                     ILandObject land = Scene.LandChannel.GetLandObject(entry.Part.AbsolutePosition);
+
+                    string owner_name = UserManager.GetUserName(so.OwnerID);
+                    string task_name = entry.Part.Name;
+                    string parcel_name = land != null ? land.LandData.Name : "unknown";
+
+                    if (filter.Length != 0 && requestFlags != 0)
+                    {
+                        if ((requestFlags & 0x00000002) != 0)
+                        {
+                            if (!owner_name.ToLower().Contains(filter))
+                                continue;
+                        }
+                        else if ((requestFlags & 0x00000004) != 0)
+                        {
+                            if (!task_name.ToLower().Contains(filter))
+                                continue;
+                        }
+                        else if ((requestFlags & 0x00000008) != 0)
+                        {
+                            if (!parcel_name.ToLower().Contains(filter))
+                                continue;
+                        }
+                    }
 
                     LandStatReportItem lsri = new LandStatReportItem()
                     {
@@ -1718,26 +1748,16 @@ namespace OpenSim.Region.CoreModules.World.Estate
                         Score = entry.Measurement,
                         TaskID = so.UUID,
                         TaskLocalID = so.LocalId,
-                        TaskName = entry.Part.Name,
-                        OwnerName = UserManager.GetUserName(so.OwnerID),
+                        TaskName = task_name,
+                        OwnerName = owner_name,
                         OwnerID = so.OwnerID,
                         Bytes = bytes_used,
                         Urls = urls_used,
                         Time = Utils.DateTimeToUnixTime(entry.Part.Rezzed),
-                        Parcel = land != null ? land.LandData.Name : "unknown"
+                        Parcel = parcel_name
                     };
 
-                    if (filter.Length != 0)
-                    {
-                        if ((lsri.OwnerName.Contains(filter) || lsri.TaskName.Contains(filter)))
-                        {
-                        }
-                        else
-                        {
-                            continue;
-                        }
-                    }
-
+                    items++;
                     SceneReport.Add(lsri);
 
                     if (items >= 100)

@@ -3672,11 +3672,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
 
                     LLSDxmlEncode.AddEndArray(sb);
                 }
-                else
-                {
-                    LLSDxmlEncode.AddEmptyArray("ReportData", sb);
-                    LLSDxmlEncode.AddEmptyArray("DataExtended", sb);
-                }
 
                 OSD ev = new OSDllsdxml(eq.EndEvent(sb));
                 eq.Enqueue(ev, AgentId);

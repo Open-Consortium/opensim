@@ -2513,7 +2513,7 @@ namespace OpenSim.Region.ScriptEngine.XEngine
 
         public Dictionary<uint, int> GetObjectScriptsBytesUsed()
         {
-            throw new NotImplementedException();
+            return new Dictionary<uint, int>();
         }
     }
 }
