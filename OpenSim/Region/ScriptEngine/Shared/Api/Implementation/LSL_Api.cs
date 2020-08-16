@@ -7023,27 +7023,27 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         public LSL_Key llRequestUserKey(LSL_String name)
         {
-            UUID identifier = UUID.Random();
-
-            UUID request_id = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string[] split = name.m_string.Split('.');
-
-            if(split.Length <= 2)
+            Action<string> act = eventID =>
             {
-                string first = split[0];
-                string last = split.Length == 2 ? split[1] : "Resident";
+                string[] split = name.m_string.Split('.');
 
-                UUID avatar = World.UserManagementModule.GetUserIdByName(first, last);
+                if (split.Length <= 2)
+                {
+                    string first = split[0];
+                    string last = split.Length == 2 ? split[1] : "Resident";
 
-                AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), avatar.ToString());
-            }
-            else
-            {
-                AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), ScriptBaseClass.NULL_KEY);
-            }
+                    UUID avatar = World.UserManagementModule.GetUserIdByName(first, last);
 
-            return request_id.ToString();
+                    m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, avatar.ToString());
+                }
+                else
+                {
+                    m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, ScriptBaseClass.NULL_KEY);
+                }
+            };
+
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
 
         public void llSetTextureAnim(int mode, int face, int sizex, int sizey, double start, double length, double rate)
@@ -15526,8 +15526,10 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (!UUID.TryParse(id, out UUID key) || key == UUID.Zero)
                 return string.Empty;
 
+            IDisplayNamesModule namesModule = World.RequestModuleInterface<IDisplayNamesModule>();
+
             ScenePresence lpresence = World.GetScenePresence(key);
-            if (lpresence != null)
+            if (lpresence != null && namesModule == null)
             {
                 string lname = lpresence.Name;
                 string ftid = m_AsyncCommands.DataserverPlugin.RequestWithImediatePost(m_host.LocalId,
@@ -15538,8 +15540,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             Action<string> act = eventID =>
             {
                 string name = String.Empty;
-				
-				IDisplayNamesModule namesModule = World.RequestModuleInterface<IDisplayNamesModule>();
 
 				if(namesModule != null)
 				{
@@ -19100,243 +19100,243 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         public LSL_Key llCreateKeyValue(string key, string value)
         {
-            UUID identifier = UUID.Random();
-
-            UUID requestID = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string response;
-
-            if (m_item.ExperienceID != UUID.Zero)
+            Action<string> act = eventID =>
             {
-                if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                string response;
+
+                if (m_item.ExperienceID != UUID.Zero)
                 {
-                    string create = World.ExperienceModule.CreateKeyValue(m_item.ExperienceID, key, value);
-                    if (create == "success")
-                        response = string.Format("1,{0}", value);
-                    else if (create == "exists")
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_STORAGE_EXCEPTION);
-                    else if (create == "full")
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_QUOTA_EXCEEDED);
+                    if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                    {
+                        string create = World.ExperienceModule.CreateKeyValue(m_item.ExperienceID, key, value);
+                        if (create == "success")
+                            response = string.Format("1,{0}", value);
+                        else if (create == "exists")
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_STORAGE_EXCEPTION);
+                        else if (create == "full")
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_QUOTA_EXCEEDED);
+                        else
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_UNKNOWN_ERROR);
+                    }
                     else
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_UNKNOWN_ERROR);
+                    {
+                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    }
                 }
                 else
                 {
-                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
                 }
-            }
-            else
-            {
-                response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
-            }
 
-            AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), response);
+                m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, response);
+            };
 
-            return new LSL_Key(requestID.ToString());
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
 
         public LSL_Key llDeleteKeyValue(string key)
         {
-            UUID identifier = UUID.Random();
-
-            UUID requestID = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string response;
-
-            if (m_item.ExperienceID != UUID.Zero)
+            Action<string> act = eventID =>
             {
-                if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                string response;
+
+                if (m_item.ExperienceID != UUID.Zero)
                 {
-                    string delete = World.ExperienceModule.DeleteKey(m_item.ExperienceID, key);
-                    if (delete == "success")
-                        response = "1,delete";
-                    else if (delete == "missing")
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_STORAGE_EXCEPTION);
+                    if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                    {
+                        string delete = World.ExperienceModule.DeleteKey(m_item.ExperienceID, key);
+                        if (delete == "success")
+                            response = "1,delete";
+                        else if (delete == "missing")
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_STORAGE_EXCEPTION);
+                        else
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_UNKNOWN_ERROR);
+                    }
                     else
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_UNKNOWN_ERROR);
+                    {
+                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    }
                 }
                 else
                 {
-                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
                 }
-            }
-            else
-            {
-                response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
-            }
 
-            AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), response);
+                m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, response);
+            };
 
-            return new LSL_Key(requestID.ToString());
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
 
         public LSL_Key llReadKeyValue(string key)
         {
-            UUID identifier = UUID.Random();
-
-            UUID requestID = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string response;
-
-            if (m_item.ExperienceID != UUID.Zero)
+            Action<string> act = eventID =>
             {
-                if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                string response;
+
+                if (m_item.ExperienceID != UUID.Zero)
                 {
-                    string get = World.ExperienceModule.GetKeyValue(m_item.ExperienceID, key);
-                    if (get == null)
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_KEY_NOT_FOUND);
+                    if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                    {
+                        string get = World.ExperienceModule.GetKeyValue(m_item.ExperienceID, key);
+                        if (get == null)
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_KEY_NOT_FOUND);
+                        else
+                            response = "1," + get;
+                    }
                     else
-                        response = "1," + get;
+                    {
+                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    }
                 }
                 else
                 {
-                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
                 }
-            }
-            else
-            {
-                response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
-            }
 
-            AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), response);
+                m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, response);
+            };
 
-            return new LSL_Key(requestID.ToString());
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
 
         public LSL_Key llUpdateKeyValue(string key, string value, LSL_Integer check, string original)
         {
-            UUID identifier = UUID.Random();
-
-            UUID requestID = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string response;
-
-            if (m_item.ExperienceID != UUID.Zero)
+            Action<string> act = eventID =>
             {
-                if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                string response;
+
+                if (m_item.ExperienceID != UUID.Zero)
                 {
-                    bool do_check = check == 1;
-                    string update = World.ExperienceModule.UpdateKeyValue(m_item.ExperienceID, key, value, do_check, original);
-                    if (update == "success")
-                        response = "1," + value;
-                    else if (update == "mismatch")
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_RETRY_UPDATE);
-                    else if (update == "missing")
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_KEY_NOT_FOUND);
-                    else if (update == "full")
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_QUOTA_EXCEEDED);
+                    if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                    {
+                        bool do_check = check == 1;
+                        string update = World.ExperienceModule.UpdateKeyValue(m_item.ExperienceID, key, value, do_check, original);
+                        if (update == "success")
+                            response = "1," + value;
+                        else if (update == "mismatch")
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_RETRY_UPDATE);
+                        else if (update == "missing")
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_KEY_NOT_FOUND);
+                        else if (update == "full")
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_QUOTA_EXCEEDED);
+                        else
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_UNKNOWN_ERROR);
+                    }
                     else
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_UNKNOWN_ERROR);
+                    {
+                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    }
                 }
                 else
                 {
-                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
                 }
-            }
-            else
-            {
-                response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
-            }
 
-            AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), response);
+                m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, response);
+            };
 
-            return new LSL_Key(requestID.ToString());
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
 
         public LSL_Key llKeyCountKeyValue()
         {
-            UUID identifier = UUID.Random();
-
-            UUID requestID = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string response;
-
-            if (m_item.ExperienceID != UUID.Zero)
+            Action<string> act = eventID =>
             {
-                if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                string response;
+
+                if (m_item.ExperienceID != UUID.Zero)
                 {
-                    int count = World.ExperienceModule.GetKeyCount(m_item.ExperienceID);
-                    response = string.Format("1,{0}", count);
+                    if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                    {
+                        int count = World.ExperienceModule.GetKeyCount(m_item.ExperienceID);
+                        response = string.Format("1,{0}", count);
+                    }
+                    else
+                    {
+                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    }
                 }
                 else
                 {
-                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
                 }
-            }
-            else
-            {
-                response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
-            }
 
-            AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), response);
+                m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, response);
+            };
 
-            return new LSL_Key(requestID.ToString());
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
 
         public LSL_Key llKeysKeyValue(LSL_Integer first, LSL_Integer count)
         {
-            UUID identifier = UUID.Random();
-
-            UUID requestID = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string response;
-
-            if (m_item.ExperienceID != UUID.Zero)
+            Action<string> act = eventID =>
             {
-                if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                string response;
+
+                if (m_item.ExperienceID != UUID.Zero)
                 {
-                    string[] keys = World.ExperienceModule.GetKeys(m_item.ExperienceID, first, count);
-                    if (keys.Length > 0)
-                        response = string.Format("1,{0}", string.Join(",", keys));
+                    if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                    {
+                        string[] keys = World.ExperienceModule.GetKeys(m_item.ExperienceID, first, count);
+                        if (keys.Length > 0)
+                            response = string.Format("1,{0}", string.Join(",", keys));
+                        else
+                            response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_KEY_NOT_FOUND);
+                    }
                     else
-                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_KEY_NOT_FOUND);
+                    {
+                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    }
                 }
                 else
                 {
-                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
                 }
-            }
-            else
-            {
-                response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
-            }
 
-            AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), response);
+                m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, response);
+            };
 
-            return new LSL_Key(requestID.ToString());
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
 
         public LSL_Key llDataSizeKeyValue()
         {
-            UUID identifier = UUID.Random();
-
-            UUID requestID = AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, identifier.ToString());
-
-            string response;
-
-            if (m_item.ExperienceID != UUID.Zero)
+            Action<string> act = eventID =>
             {
-                if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
-                {
-                    int used = World.ExperienceModule.GetSize(m_item.ExperienceID);
-                    var info = World.ExperienceModule.GetExperienceInfo(m_item.ExperienceID);
+                string response;
 
-                    int max = 1024 * 1024 * info.quota;
-                    response = string.Format("1,{0},{1}", used, max);
+                if (m_item.ExperienceID != UUID.Zero)
+                {
+                    if (CheckExperienceAccessAtPos(m_host.AbsolutePosition, m_item.ExperienceID))
+                    {
+                        int used = World.ExperienceModule.GetSize(m_item.ExperienceID);
+                        var info = World.ExperienceModule.GetExperienceInfo(m_item.ExperienceID);
+
+                        int max = 1024 * 1024 * info.quota;
+                        response = string.Format("1,{0},{1}", used, max);
+                    }
+                    else
+                    {
+                        response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    }
                 }
                 else
                 {
-                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NOT_PERMITTED_LAND);
+                    response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
                 }
-            }
-            else
-            {
-                response = string.Format("0,{0}", ScriptBaseClass.XP_ERROR_NO_EXPERIENCE);
-            }
 
-            AsyncCommands.DataserverPlugin.DataserverReply(identifier.ToString(), response);
+                m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, response);
+            };
 
-            return new LSL_Key(requestID.ToString());
+            UUID rq = m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId, m_item.ItemID, act);
+            return rq.ToString();
         }
     }
 
