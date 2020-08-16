@@ -83,6 +83,7 @@ namespace OpenSim.Region.ClientStack.Linden
         private static int m_NumberScenes = 0;
         private static BlockingCollection<APollRequest> m_queue = new BlockingCollection<APollRequest>();
         private static object m_loadLock = new object();
+        protected IUserManagement m_UserManagement = null;
 
         private Dictionary<UUID, string> m_capsDictTexture = new Dictionary<UUID, string>();
         private Dictionary<UUID, string> m_capsDictGetMesh = new Dictionary<UUID, string>();
@@ -160,6 +161,9 @@ namespace OpenSim.Region.ClientStack.Linden
                     return;
                 }
 
+                if(m_UserManagement == null)
+                    m_UserManagement = s.RequestModuleInterface<IUserManagement>();
+
                 s.EventManager.OnRegisterCaps += RegisterCaps;
                 s.EventManager.OnDeregisterCaps += DeregisterCaps;
 
@@ -236,10 +240,12 @@ namespace OpenSim.Region.ClientStack.Linden
             private HashSet<UUID> dropedResponses = new HashSet<UUID>();
 
             private Scene m_scene;
-            public PollServiceAssetEventArgs(string uri, UUID pId, Scene scene) :
+            private string m_hgassets = null;
+            public PollServiceAssetEventArgs(string uri, UUID pId, Scene scene, string HGAssetSVC) :
                 base(null, uri, null, null, null, null, pId, int.MaxValue)
             {
                 m_scene = scene;
+                m_hgassets = HGAssetSVC;
 
                 HasEvents = (requestID, agentID) =>
                 {
@@ -359,7 +365,7 @@ namespace OpenSim.Region.ClientStack.Linden
 */
                 }
                 OSHttpResponse response = new OSHttpResponse(requestinfo.request);
-                m_getAssetHandler.Handle(requestinfo.request, response);
+                m_getAssetHandler.Handle(requestinfo.request, response, m_hgassets);
 
                 lock(responses)
                 {
@@ -393,6 +399,10 @@ namespace OpenSim.Region.ClientStack.Linden
                 protocol = "https";
             }
 
+            string hgassets = null;
+            if(m_UserManagement != null)
+                hgassets = m_UserManagement.GetUserServerURL(agentID, "AssetServerURI");
+
             IExternalCapsModule handler = m_scene.RequestModuleInterface<IExternalCapsModule>();
             string baseURL = String.Format("{0}://{1}:{2}", protocol, hostName, port);
 
@@ -401,7 +411,7 @@ namespace OpenSim.Region.ClientStack.Linden
                 string capUrl = "/" + UUID.Random();
 
                 // Register this as a poll service
-                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene);
+                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene, hgassets);
 
                 //args.Type = PollServiceEventArgs.EventType.Texture;
                 MainServer.Instance.AddPollServiceHTTPHandler(args);
@@ -422,7 +432,7 @@ namespace OpenSim.Region.ClientStack.Linden
             {
                 string capUrl = "/" + UUID.Random();
 
-                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene);
+                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene, hgassets);
                 //args.Type = PollServiceEventArgs.EventType.Mesh;
                 MainServer.Instance.AddPollServiceHTTPHandler(args);
 
@@ -440,7 +450,7 @@ namespace OpenSim.Region.ClientStack.Linden
             {
                 string capUrl = "/" + UUID.Random();
 
-                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene);
+                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene, hgassets);
                 //args.Type = PollServiceEventArgs.EventType.Mesh2;
                 MainServer.Instance.AddPollServiceHTTPHandler(args);
 
@@ -453,13 +463,12 @@ namespace OpenSim.Region.ClientStack.Linden
             else if (m_GetMesh2URL != string.Empty)
                 caps.RegisterHandler("GetMesh2", m_GetMesh2URL);
 
-
             //ViewerAsset
             if (m_GetAssetURL == "localhost")
             {
                 string capUrl = "/" + UUID.Random();
 
-                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene);
+                PollServiceAssetEventArgs args = new PollServiceAssetEventArgs(capUrl, agentID, m_scene, hgassets);
                 //args.Type = PollServiceEventArgs.EventType.Asset;
                 MainServer.Instance.AddPollServiceHTTPHandler(args);
 

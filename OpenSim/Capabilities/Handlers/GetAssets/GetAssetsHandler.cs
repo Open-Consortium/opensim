@@ -80,7 +80,7 @@ namespace OpenSim.Capabilities.Handlers
             m_externalURL = external_url;
         }
 
-        public void Handle(OSHttpRequest req, OSHttpResponse response)
+        public void Handle(OSHttpRequest req, OSHttpResponse response, string serviceURL = null)
         {
             response.ContentType = "text/plain";
 
@@ -127,19 +127,31 @@ namespace OpenSim.Capabilities.Handlers
                 return;
 
             AssetBase asset = m_assetService.GetCached(assetID.ToString());
-            if(asset == null)
+            if (asset == null)
             {
-                if(m_externalURL != string.Empty)
+                if (String.IsNullOrWhiteSpace(serviceURL))
                 {
-                    response.StatusCode = (int)HttpStatusCode.Redirect;
-                    response.AddHeader("Location", string.Format("{0}/?{1}={2}", m_externalURL, asset_type_str, assetID));
-                    response.KeepAlive = false;
-                    return;
+					if(m_externalURL != string.Empty)
+					{
+						response.StatusCode = (int)HttpStatusCode.Redirect;
+						response.AddHeader("Location", string.Format("{0}/?{1}={2}", m_externalURL, asset_type_str, assetID));
+						response.KeepAlive = false;
+						return;
+					}
+					
+					asset = m_assetService.Get(assetID.ToString());
+					
+					if (asset == null)
+					{
+						// m_log.Warn("[GETASSET]: not found: " + query + " " + assetStr);
+						response.StatusCode = (int)HttpStatusCode.NotFound;
+						return;
+					}
                 }
 
-                asset = m_assetService.Get(assetID.ToString());
-
-                if(asset == null)
+                string newid = serviceURL + "/" + assetID.ToString();
+                asset = m_assetService.Get(newid);
+                if (asset == null)
                 {
                     // m_log.Warn("[GETASSET]: not found: " + query + " " + assetStr);
                     response.StatusCode = (int)HttpStatusCode.NotFound;
